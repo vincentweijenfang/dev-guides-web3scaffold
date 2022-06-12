@@ -189,6 +189,9 @@ module.exports = function (webpackEnv) {
   return {
     target: ['browserslist'],
     resolve: {
+      fallback: {
+        // fs: false,
+      },
       alias: {
         '@': path.resolve(__dirname, '../../'),
       }

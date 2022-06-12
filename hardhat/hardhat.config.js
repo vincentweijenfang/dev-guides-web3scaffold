@@ -7,6 +7,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 
   for (const account of accounts) {
     console.log(account.address);
+    console.log(account);
   }
 });
 
@@ -18,4 +19,9 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
   solidity: "0.8.4",
+  networks: {
+    hardhat: {
+      chainId: 1337
+    },
+  },
 };

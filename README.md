@@ -33,6 +33,10 @@ mkdir hardhat
 cd hardhat 
 npx hardhat 
 
+// hardhat 套件
+yarn add openzeppelin/hardhat-upgrades hardhat-gas-reporter @nomiclabs/hardhat-etherscan@^3.0.3 @nomiclabs/hardhat-ethers -W
+yarn add @supercharge/fs -W
+
 // 今後升級 v2.0.0 使用
 yarn redux
 ```
@@ -55,6 +59,8 @@ yarn redux
 - Get Started：`yarn app`
 - 前端開發：`yarn start`
 - 編譯前端檔案：`yarn build`
+- 本地鏈：`npx hardhat node`
+- 部署：`npx hardhat run scripts/sample-script.js --network localhost`
 
 ### 前端
 
@@ -81,8 +87,20 @@ IBM 風格 [Carbon](https://carbondesignsystem.com/components/accordion/usage/#b
 
 ### 合約
 
+deploy script 生成 abi 和 address 丟進前端
+
 ```shell
 ```
+
+### 上線
+
+github action s3
+https://medium.com/starbugs/3dd2d70eeb
+
+打包超快
+https://vitejs.dev/guide/
+https://www.npmjs.com/package/@vitejs/plugin-react
+
 
 #### 使用時注意：
 <!--  -->

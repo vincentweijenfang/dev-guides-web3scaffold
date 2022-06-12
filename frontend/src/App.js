@@ -3,17 +3,10 @@ import './App.styl';
 
 // React 相關 
 import React, { 
-  useCallback, 
-  useEffect, 
-  useState 
+  useCallback, useEffect, useState 
 } from "react";
 import { 
-  Link, 
-  NavLink, 
-  Redirect, 
-  Route, 
-  Switch, 
-  useLocation 
+  Link, NavLink, Redirect, Route, Switch, useLocation 
 } from "react-router-dom";
 
 // UI Component 相關｜https://github.com/chakra-ui/chakra-ui/
@@ -25,22 +18,23 @@ import {
 // 區塊鏈的常數們（待處理）
 import { 
   NETWORKS, 
-  // NETWORK
-  // INFURA_ID 
+  INFURA_KEY,
+  INFURA_NODE_ID,
 } from "./constants/networks"; 
 
 // wagmi + ethers 相關 
 import { providers } from "ethers";
 import { 
-  Provider, 
-  chain, 
-  defaultChains,
-  useConnect, 
-  useAccount,
+  WagmiConfig, createClient, 
+  chain, defaultChains, configureChains,
 } from "wagmi";
+import { publicProvider } from 'wagmi/providers/public'
+import { infuraProvider } from 'wagmi/providers/infura'
+import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 import { InjectedConnector } from "wagmi/connectors/injected";
+import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
 import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
-// import { WalletLinkConnector } from "wagmi/connectors/walletLink"; // 這個不知為何不會有 waring，待解決
+
 
 // 接外部的 API
 // Uniswap
@@ -89,8 +83,6 @@ import {
  * 
  * 常用套件：
  * 'prop-types' - React 使用的型別套件
- * 
- *  
  */ 
 
 /**
@@ -102,50 +94,52 @@ import {
  * 
  */ 
 
+
+
 console.log('%INDEX', 'background: #436822; padding: .125em .4em; color: white; font-size: 32px; font-weight: 600')
 
 function App() {
 
-  const targetNetwork = NETWORKS.localhost;
-
-  // Wagmi + ./constants.ks
-  const connectors = ({ chainId }) => {
-    const rpcUrl =
-      defaultChains.find((x) => x.id === chainId)?.rpcUrls?.[0] ??
-      chain.mainnet.rpcUrls[0];
-    return [
-      new InjectedConnector({
-        defaultChains, // localhost, rinkeby
-        options: { shimDisconnect: true },
+  // 先建立 provider，用項目方擁有的節點，由上往下迭代（下面最先）
+  const { chains, provider } = configureChains(
+    Object.values(chain), // 將物件展開城 array
+    [
+      infuraProvider({ INFURA_NODE_ID }),
+      jsonRpcProvider({
+        rpc: (chain) => {
+          // if (chain.Localhost )
+          // console.log(chain.rpcUrls.default)
+          return { 
+            http: chain.rpcUrls.default
+          }
+        },
       }),
-      // new WalletConnectConnector({
-      //   options: {
-      //     INFURA_ID,
-      //     qrcode: true,
-      //   },
-      // }),
-      // new WalletLinkConnector({
-      //   options: {
-      //     appName: 'BITYO',
-      //     jsonRpcUrl: `${rpcUrl}`,
-      //   },
-      // }),
-    ]
-  }
+    ],
+  )
 
-  const provider = ({ chainId, connector }) => {
-    return targetNetwork.name == 'localhost'
-    ? new providers.JsonRpcProvider(
-        connector?.chains.find((x) => x.id == chainId)?.rpcUrls[0]
-      )
-    : providers.getDefaultProvider(
-      chainId
-    );
-  }
-  
-  // 測試
-  const [testValue, setTestValue] = useState(5);
-  // let err = 5;
+  const client = createClient({
+    autoConnect: true, // 默默幫你連
+    connectors: [
+      new WalletConnectConnector({
+        chains,
+        options: {
+          qrcode: true,
+        },
+      }),
+      new MetaMaskConnector({ chains }),
+      new InjectedConnector({ 
+        chains,
+        options: {
+          name: 'Injected',
+          shimDisconnect: true,
+        },
+      }), // 把所有鏈都加進去
+    ],
+    provider,
+  })
+
+  // console.log(client.connectors)
+
 
   return pug`
     // ████████  ██     ██  ███████ 
@@ -157,62 +151,64 @@ function App() {
        ██         ███████   ███████   - start
 
     //- 引入 wagmi
-    Provider.App(
-      autoConnect
-      connectors=connectors
-      provider=provider
-    )
-      //- 引入 Chakra UI
+    WagmiConfig(client=client)
+
       ChakraProvider
-      .App.d-flex.flex-column
-        
-        //- Header
+        main
+          XXXX
+          
 
-        main.flex-fill
-          .px-2
-            img.App-logo(src=logo alt="logo")
-            
-            //- 測試用內頁    
-            
-            //- ┏━━━━━━━━━━━━━━┓
-                ┃ LOOP Example ┃
-                ┗━━━━━━━━━━━━━━┛
-                以事件 call setTestValue(testValue - 1);
-                不能在 render 時 useState，因為偵測到狀態改變會 rerender，導致 infinite loop
-            - let testIndex = testValue
-            while (testIndex > 0)
-              //- 每一個 loop 所建立的 dom 需要有一個 uniqle key value，很重要！
-              div(key=testIndex) #{testIndex}
-              - testIndex--
-            //- ━━━━━━━━━━━━━━━
+      //- 引入 Chakra UI
+        ChakraProvider
+        .App.d-flex.flex-column
+          
+          //- Header
 
-
-            p Edit 
-              code src/App.js
-              |  and save to reload.
-            
-            
-            //- ┏━━━━━━━━━━━━━━━━━┓
-                ┃ onClick Example ┃
-                ┗━━━━━━━━━━━━━━━━━┛
-                Button 是 Chakra UI 提供的 Component
-                setTestValue 賦值不可使用 testValue--，因為這等同於對常數本身做運算
-            Button.my-5(
-              colorScheme="teal"
-              size="lg"
-              outline="none"
-              onClick=() => {
-                setTestValue(testValue - 1) 
-              }
-              _focus={
-                boxShadow: 'none',
-              }
-            ) testValue - 1
-            //- ━━━━━━━━━━━━━━━━━━
+          main.flex-fill
+            .px-2
+              img.App-logo(src=logo alt="logo")
+              
+              //- 測試用內頁    
+              
+              //- ┏━━━━━━━━━━━━━━┓
+                  ┃ LOOP Example ┃
+                  ┗━━━━━━━━━━━━━━┛
+                  以事件 call setTestValue(testValue - 1);
+                  不能在 render 時 useState，因為偵測到狀態改變會 rerender，導致 infinite loop
+                - let testIndex = testValue
+                while (testIndex > 0)
+                  //- 每一個 loop 所建立的 dom 需要有一個 uniqle key value，很重要！
+                  div(key=testIndex) #{testIndex}
+                  - testIndex--
+              //- ━━━━━━━━━━━━━━━
 
 
-            a.App-link(href="https://reactjs.org" target="_blank" rel="noopener noreferrer")
-            |Learn React
+              p Edit 
+                code src/App.js
+                |  and save to reload.
+              
+              
+              //- ┏━━━━━━━━━━━━━━━━━┓
+                  ┃ onClick Example ┃
+                  ┗━━━━━━━━━━━━━━━━━┛
+                  Button 是 Chakra UI 提供的 Component
+                  setTestValue 賦值不可使用 testValue--，因為這等同於對常數本身做運算
+                Button.my-5(
+                  colorScheme="teal"
+                  size="lg"
+                  outline="none"
+                  onClick=() => {
+                    setTestValue(testValue - 1) 
+                  }
+                  _focus={
+                    boxShadow: 'none',
+                  }
+                ) testValue - 1
+                //- ━━━━━━━━━━━━━━━━━━
+
+
+              a.App-link(href="https://reactjs.org" target="_blank" rel="noopener noreferrer")
+              |Learn React
 
         //- Footer
       
@@ -223,7 +219,7 @@ function App() {
        ██        ██   ████ ██     ██
        ██        ██    ███ ██     ██
        █████████ ██     ██ ███████
-  `;
+  `
 }
 
 export default App;
